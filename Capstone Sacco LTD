@@ -1,0 +1,315 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <conio.h>
+
+#define EMPLOYEE_USERNAME "Santosh."
+#define EMPLOYEE_PASSWORD "pinChez."
+#define MAX_PASSWORD_LENGTH 20
+
+// Define structures for employee, bus, and booking information
+struct Employee {
+    char username[50];
+    char password[50];
+};
+
+//Function to securely read a password.
+void readPassword(char *password, int maxLength) {
+int i = 0;
+char c;
+
+while (i < maxLength - 1) {
+    c = getch(); // Basically reads the password without displaying it
+    if (c == '\r' || c == '\n') {//Enter key pressed, terminates the input
+        break;
+    } else if (c == '\b' && i > 0) {//If backspace is pressed
+    i--;
+    printf("\b \b"); //Erase the character from screen
+     }else {
+        password[i++] = c;
+        printf("*");
+     }
+     }
+     password[i] = '\0'; //Null-terminate the password string
+     printf("\n");
+     }
+
+struct BusInfo {
+    int bus_number;
+    char source[50];
+    char destination[50];
+    int total_seats;
+    int available_seats;
+    int *booked_seats;
+};
+
+struct Booking {
+    int bus_number;
+    int seat_number;
+};
+
+// Define structure to store employee passwords
+struct EmployeePassword {
+    char username[50];
+    char password[50];
+};
+
+struct EmployeePassword employeePasswords[5];
+
+// Declare arrays for storing employee, bus, and booking data
+struct Employee employees[5];
+struct BusInfo buses[10];
+struct Booking bookings[100];
+
+int employeeCount = 0;
+int busCount = 0;
+int bookingCount = 0;
+
+void initializeData() {
+    // Initialize employee and bus data
+    struct Employee emp;
+    strcpy(emp.username, EMPLOYEE_USERNAME);
+    strcpy(emp.password, EMPLOYEE_PASSWORD);
+    employees[employeeCount++] = emp;
+
+    // Initialize employee passwords
+    strcpy(employeePasswords[0].username, EMPLOYEE_USERNAME);
+    strcpy(employeePasswords[0].password, EMPLOYEE_PASSWORD);
+
+    int i = 0;
+    while (i < 10) {
+        struct BusInfo bus;
+        bus.bus_number = i + 1;
+        strcpy(bus.source, "Nairobi");
+        strcpy(bus.destination, "Kisumu");
+        bus.total_seats = 50;
+        bus.available_seats = 50;
+        bus.booked_seats = (int *)malloc(50 * sizeof(int));
+        for (int j = 0; j < 0; j++) {
+            bus.booked_seats[j] = 0;
+        }
+        buses[busCount++] = bus;
+        i++;
+    }
+}
+
+int login() {
+    char username[50];
+    char password[50];
+    printf("Username: ");
+    scanf("%s", username);
+    printf("Password: ");
+    scanf("%s", password);
+
+    int i = 0;
+    while (i < employeeCount) {
+        if (strcmp(username, employeePasswords[i].username) == 0 && strcmp(password, employeePasswords[i].password) == 0) {
+            printf("Login successful. Welcome, %s!\n", employeePasswords[i].username);
+            return 1; // Successful login
+        }
+        i++;
+    }
+
+    printf("Login failed. Invalid username or password.\n");
+    return 0; // Failed login
+}
+
+void addBusSchedule() {
+    // Get the bus details from the user
+    struct BusInfo bus;
+    printf("Enter bus number: ");
+    scanf("%d", &bus.bus_number);
+    printf("Enter source: ");
+    scanf("%s", bus.source);
+    printf("Enter destination: ");
+    scanf("%s", bus.destination);
+    printf("Enter total seats: ");
+    scanf("%d", &bus.total_seats);
+    bus.available_seats = bus.total_seats;
+    bus.booked_seats = (int *)malloc(bus.total_seats * sizeof(int));
+    for (int i = 0; i < bus.total_seats; i++) {
+        bus.booked_seats[i] = 0;
+    }
+
+    // Add the bus to the bus array
+    buses[busCount++] = bus;
+}
+
+void removeBusSchedule() {
+    // Get the bus number from the user
+    int bus_number;
+    printf("Enter bus number to remove: ");
+    scanf("%d", &bus_number);
+
+    // Find the bus in the bus array
+    int bus_index = -1;
+    for (int i = 0; i < busCount; i++) {
+        if (buses[i].bus_number == bus_number) {
+            bus_index = i;
+            break;
+        }
+    }
+
+    // If the bus is found, remove it from the bus array
+    if (bus_index != -1) {
+        free(buses[bus_index].booked_seats);
+        buses[bus_index] = buses[busCount - 1];
+        busCount--;
+    } else {
+        printf("Bus not found.\n");
+    }
+}
+
+void displayBusSchedules() {
+    // Print the bus details
+    printf("\nBus Schedules:\n");
+    for (int i = 0; i < busCount; i++) {
+        printf("Bus Number: %d\n", buses[i].bus_number);
+        printf("Source: %s\n", buses[i].source);
+        printf("Destination: %s\n", buses[i].destination);
+        printf("Total Seats: %d\n", buses[i].total_seats);
+        printf("Available Seats: %d\n\n", buses[i].available_seats);
+    }
+}
+
+void bookTicket() {
+    // Get the bus number and seat number from the user
+    int bus_number, seat_number;
+    printf("Enter bus number: ");
+    scanf("%d", &bus_number);
+    printf("Enter seat number: ");
+    scanf("%d", &seat_number);
+
+    // Find the bus in the bus array
+    int bus_index = -1;
+    for (int i = 0; i < busCount; i++) {
+        if (buses[i].bus_number == bus_number) {
+            bus_index = i;
+            break;
+        }
+    }
+
+    // If the bus is found, book the seat
+    if (bus_index != -1) {
+        if (buses[bus_index].available_seats > 0 && buses[bus_index].booked_seats[seat_number] == 0) {
+            buses[bus_index].booked_seats[seat_number] = 1;
+            buses[bus_index].available_seats--;
+
+            // Record the booking information in the file
+            FILE *file = fopen("bookings.txt", "a");
+            if (file != NULL) {
+                fprintf(file, "%d,%d\n", bus_number, seat_number);
+                fclose(file);
+            } else {
+                printf("Failed to record the booking.\n");
+            }
+
+            printf("Ticket booked successfully!\n");
+        } else {
+            printf("Seat not available.\n");
+        }
+    } else {
+        printf("Bus not found.\n");
+    }
+}
+
+void yourMenu() {
+    int choice;
+    do {
+        printf("\nYour Menu:\n");
+        printf("1. Add Bus Schedule\n");
+        printf("2. Remove Bus Schedule\n");
+        printf("3. Display Bus Schedules\n");
+        printf("4. Book Ticket\n");
+        printf("5. Logout\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                addBusSchedule();
+                break;
+            case 2:
+                removeBusSchedule();
+                break;
+            case 3:
+                displayBusSchedules();
+                break;
+            case 4:
+                bookTicket();
+                break;
+            case 5:
+                printf("Logout successful.\n");
+                default:
+    printf("Invalid choice. Please enter a valid option.\n");
+    break;
+        }
+    }while (1);
+    }
+
+
+int main() {
+    {
+    char password [MAX_PASSWORD_LENGTH];
+
+    printf("Enter your password: ");
+    readPassword(password, MAX_PASSWORD_LENGTH);
+
+    //Validate the password
+    printf("Password entered: %s\n", password);
+
+    //clear password from memory.
+    for (int i= 0; i < MAX_PASSWORD_LENGTH; i++) {
+        password[i] = 0;
+    }
+ }
+    // Initialize data
+    initializeData();
+
+    int loggedIn = 0;
+
+
+    do {
+        printf("\n||**********Main Menu:**********||\n");
+        if (!loggedIn) {
+            printf("1. Login\n");
+        } else {
+            printf("1. Logout\n");
+            printf("2. Your Menu\n");
+        }
+        printf("3. Exit\n");
+
+        int choice;
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                if (!loggedIn) {
+                    loggedIn = login();
+                } else {
+                    printf("Logout successful.\n");
+                    loggedIn = 0;
+                }
+                break;
+            case 2:
+                if (loggedIn) {
+                    yourMenu();
+                } else {
+                    printf("Please log in as an employee first.\n");
+                }
+                break;
+            case 3:
+                printf("Goodbye!\n");
+                break;
+            default:
+                printf("Invalid choice. Please enter a valid option.\n");
+                break;
+                }
+        }
+        while (1);{
+            return 0;
+    }}
+
+
