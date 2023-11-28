@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <conio.h>
 
 #define EMPLOYEE_USERNAME "Santosh."
 #define EMPLOYEE_PASSWORD "pinChez."
@@ -106,6 +105,7 @@ int login() {
     while (i < employeeCount) {
         if (strcmp(username, employeePasswords[i].username) == 0 && strcmp(password, employeePasswords[i].password) == 0) {
             printf("Login successful. Welcome, %s!\n", employeePasswords[i].username);
+            int system (cls);
             return 1; // Successful login
         }
         i++;
